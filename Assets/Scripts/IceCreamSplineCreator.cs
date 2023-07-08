@@ -1,4 +1,3 @@
-
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -20,8 +19,9 @@ public class IceCreamSplineCreator : MonoBehaviour
         
         while (currentRadius>0)
         {
-            AddNodesCircular(Mathf.Round(currentRadius * 100) / 100f, currentHeight);
+            AddNodesCircular(currentRadius , currentHeight);
             currentRadius -= _horizontalInterval;
+            currentRadius =  Mathf.Round(currentRadius * 1000000) * .000001f;
             currentHeight += _verticalInterval;
         }
 
@@ -31,8 +31,9 @@ public class IceCreamSplineCreator : MonoBehaviour
 
     private void AddNodesCircular(float radius, float height)
     {
+        
         float radiusAngle = _unitAngle / radius;
-        int count = (int)(360 / radiusAngle);
+        int count =  Mathf.CeilToInt(180 / radiusAngle);
         for (int i = 0; i < count; i++)
         {
             _splineContainer.Spline.Add(new BezierKnot(new float3(Mathf.Cos(radiusAngle*i)*radius,height,Mathf.Sin(radiusAngle*i)*radius)));       
