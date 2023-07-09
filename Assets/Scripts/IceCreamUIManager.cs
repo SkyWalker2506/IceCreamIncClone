@@ -7,8 +7,20 @@ public class IceCreamUIManager : MonoBehaviour
 {
     [SerializeField] private GameObject _colorButtonPrefab;
     [SerializeField] private Transform _buttonHolder;
-    public static Action<Color> OnCreatePiece;
-    public static Action OnStopCreate;
+    [SerializeField] private Button _resetButton;
+    public Action<Color> OnPourIceCreamPiece;
+    public Action OnStopPour;
+    public Action OnResetButton;
+
+    private void OnEnable()
+    {
+        _resetButton.onClick.AddListener(() => OnResetButton?.Invoke());
+    }
+
+    private void OnDisable()
+    {
+        _resetButton.onClick.RemoveListener(() => OnResetButton?.Invoke());
+    }
 
     public void CreateButtons(Color[] colors)
     {
@@ -28,11 +40,11 @@ public class IceCreamUIManager : MonoBehaviour
             EventTrigger trigger = button.GetComponent<EventTrigger>();
             EventTrigger.Entry entry = new EventTrigger.Entry();
             entry.eventID = EventTriggerType.PointerDown;
-            entry.callback.AddListener((eventData) => { OnCreatePiece?.Invoke(color); } );
+            entry.callback.AddListener((eventData) => { OnPourIceCreamPiece?.Invoke(color); } );
             trigger.triggers.Add(entry);
             entry = new EventTrigger.Entry();
             entry.eventID = EventTriggerType.PointerUp;
-            entry.callback.AddListener((eventData) => { OnStopCreate?.Invoke(); } );
+            entry.callback.AddListener((eventData) => { OnStopPour?.Invoke(); } );
             trigger.triggers.Add(entry);
         }                
     }

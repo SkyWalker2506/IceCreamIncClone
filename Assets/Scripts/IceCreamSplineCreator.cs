@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -5,38 +6,37 @@ using UnityEngine.Splines;
 public class IceCreamSplineCreator : MonoBehaviour
 {
     [SerializeField] private SplineContainer _splineContainer;
-    [SerializeField] private float _startRadius = 5;
-    [SerializeField] private float _horizontalInterval =.5f;
-    [SerializeField] private float _verticalInterval =.5f;
-    [SerializeField] private float _unitAngle = 30;
-    
+    [SerializeField] private IceCreamCircleData[] _iceCreamCircleDatas;
+
     [ContextMenu("Create Spline")]
     void CreateIceCreamSpline()
     {
         _splineContainer.Spline.Clear();
-        float currentRadius = _startRadius;
-        float currentHeight = 0;
-        
-        while (currentRadius>0)
+
+        foreach (IceCreamCircleData data in _iceCreamCircleDatas)
         {
-            AddNodesCircular(currentRadius , currentHeight);
-            currentRadius -= _horizontalInterval;
-            currentRadius =  Mathf.Round(currentRadius * 1000000) * .000001f;
-            currentHeight += _verticalInterval;
+            AddNodesCircular(data);
         }
-
-        _splineContainer.Spline.Add(new BezierKnot(new float3(0,currentHeight,0)));       
-
     }
 
-    private void AddNodesCircular(float radius, float height)
+    private void AddNodesCircular(IceCreamCircleData data)
     {
-        
-        float radiusAngle = _unitAngle / radius;
-        int count =  Mathf.CeilToInt(180 / radiusAngle);
-        for (int i = 0; i < count; i++)
+        float angleInterval = 360f / data.PieceCount;
+        for (int i = 0; i < data.PieceCount; i++)
         {
-            _splineContainer.Spline.Add(new BezierKnot(new float3(Mathf.Cos(radiusAngle*i)*radius,height,Mathf.Sin(radiusAngle*i)*radius)));       
+            float angle = angleInterval * i * (Mathf.PI / 180);
+            float x = Mathf.Cos(angle);
+            float z = Mathf.Sin(angle);
+
+            _splineContainer.Spline.Add(new BezierKnot(new float3(x*data.Radius,data.Height,z*data.Radius)));       
         }
     }
+}
+
+[Serializable]
+public struct IceCreamCircleData
+{
+    public float Radius;
+    public float Height;
+    public int PieceCount;
 }
