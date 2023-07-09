@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Splines;
 
 public class IceCreamManager : MonoBehaviour
@@ -11,7 +12,7 @@ public class IceCreamManager : MonoBehaviour
     [SerializeField] private SplineContainer _splineContainer;
     [SerializeField] private GameObject _iceCreamPiecePrefab;
     [SerializeField] private Transform _iceCreamDispenser;
-    [SerializeField] private float _dispenserMoveSpeed = 1f;
+    [SerializeField] private float _dispenserMoveDuration = .5f;
     [SerializeField] private float _pieceMoveSpeed = 1f;
     [SerializeField] private Color[] _colors;
     private Color _currentColor;
@@ -91,7 +92,7 @@ public class IceCreamManager : MonoBehaviour
         _iceCreamPieces[piece].color = _currentColor;
         Vector3 pieceTargetPos = _splineContainer[0].Knots.ToArray()[_currentPieceIndex].Position;
         Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, _iceCreamDispenser.position.y, pieceTargetPos.z);
-        _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetEase(Ease.Linear).SetSpeedBased(true)
+        _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveDuration).SetEase(Ease.Linear)
             .OnComplete(() =>
             {
                 MovePiece(piece, dispenserTargetPos, pieceTargetPos);
