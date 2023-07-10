@@ -13,21 +13,20 @@ public class IceCreamManager : MonoBehaviour
     [SerializeField] private GameObject _iceCreamPiecePrefab;
     [SerializeField] private Transform _iceCreamDispenser;
     [SerializeField] private float _dispenserMoveSpeed = .5f;
-    [SerializeField] private float _pieceMoveSpeed = 1f;
-    [SerializeField] private float _pieceRotateSpeed = 1f;
+    [SerializeField] private float _pieceMoveDuration = 1f;
+    [SerializeField] private float _pieceRotateDuration = 1f;
+    [SerializeField] private float _piecePourInterval = 1f;
     [SerializeField] private Color[] _colors;
     private Color _currentColor;
     private int _currentPieceIndex;
     private bool _doCreate; 
-    private bool _isDispenserMoving;
     private Dictionary<Transform, Material> _iceCreamPieces = new Dictionary<Transform, Material>();
-    private Timer _timer;
-
+    private float lastTimePiecePoured;
+    
     private void Awake()
     {
         _iceCreamUIManager.CreateButtons(_colors);
         CreateIceCreamPieces();
-        _timer = new Timer(2);
     }
 
     private void OnEnable()
@@ -46,9 +45,14 @@ public class IceCreamManager : MonoBehaviour
 
     private void Update()
     {
+        TryPourIceCreamPiece();
+    }
+
+    private void TryPourIceCreamPiece()
+    {
         if (_splineContainer.Spline.Knots.Count() > _currentPieceIndex)
         {
-            if (_doCreate && !_isDispenserMoving)
+            if (_doCreate && lastTimePiecePoured + _piecePourInterval < Time.time)
             {
                 PourIceCreamPiece();
             }
@@ -90,7 +94,6 @@ public class IceCreamManager : MonoBehaviour
 
     void PourIceCreamPiece()
     {
-       // _isDispenserMoving = true;
         Transform piece = _iceCreamPieces.Keys.ToArray()[_currentPieceIndex];
         _iceCreamPieces[piece].color = _currentColor;
         BezierKnot knot = _splineContainer[0].Knots.ToArray()[_currentPieceIndex];
@@ -100,14 +103,15 @@ public class IceCreamManager : MonoBehaviour
         _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetEase(Ease.Linear);
         MovePiece(piece, dispenserTargetPos, pieceTargetPos, pieceTargetRot);
         _currentPieceIndex++;
+        lastTimePiecePoured = Time.time;
     }
 
     void MovePiece(Transform piece, Vector3 startPos, Vector3 targetPos, Quaternion targetRot)
     {
         piece.position = startPos;
         piece.gameObject.SetActive(true);
-        piece.DOMove(targetPos, _pieceMoveSpeed).SetEase(Ease.Linear).SetSpeedBased(false);
-        piece.DORotateQuaternion(targetRot, _pieceRotateSpeed).SetEase(Ease.Linear).SetSpeedBased(false);
+        piece.DOMove(targetPos, _pieceMoveDuration).SetEase(Ease.Linear);
+        piece.DORotateQuaternion(targetRot, _pieceRotateDuration).SetEase(Ease.OutExpo);
     }
 
     void OnDispenserMoved()
