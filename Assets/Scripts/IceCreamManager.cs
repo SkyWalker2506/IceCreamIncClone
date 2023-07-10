@@ -4,6 +4,7 @@ using System.Timers;
 using DG.Tweening;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Splines;
 
 public class IceCreamManager : MonoBehaviour
@@ -12,7 +13,7 @@ public class IceCreamManager : MonoBehaviour
     [SerializeField] private SplineContainer _splineContainer;
     [SerializeField] private GameObject _iceCreamPiecePrefab;
     [SerializeField] private Transform _iceCreamDispenser;
-    [SerializeField] private float _dispenserMoveSpeed = .5f;
+    [SerializeField] private float _dispenserMoveDuration = .5f;
     [SerializeField] private float _pieceMoveDuration = 1f;
     [SerializeField] private float _pieceRotateDuration = 1f;
     [SerializeField] private float _piecePourInterval = 1f;
@@ -63,7 +64,8 @@ public class IceCreamManager : MonoBehaviour
     {
         foreach (Transform piece in _iceCreamPieces.Keys)
         {
-            piece.position=Vector3.zero;
+            piece.position = Vector3.zero;
+            piece.rotation = _iceCreamPiecePrefab.transform.rotation;
             piece.gameObject.SetActive(false);
             _currentPieceIndex = 0;
             _iceCreamDispenser.position = new Vector3(0, _iceCreamDispenser.position.y, 0);
@@ -100,8 +102,8 @@ public class IceCreamManager : MonoBehaviour
         Vector3 pieceTargetPos = knot.Position;
         quaternion pieceTargetRot = knot.Rotation;
         Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, _iceCreamDispenser.position.y, pieceTargetPos.z);
-        _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetEase(Ease.Linear);
-        MovePiece(piece, dispenserTargetPos, pieceTargetPos, pieceTargetRot);
+        _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveDuration).SetEase(Ease.Linear);
+        MovePiece(piece, _iceCreamDispenser.position, pieceTargetPos, pieceTargetRot);
         _currentPieceIndex++;
         lastTimePiecePoured = Time.time;
     }
@@ -110,14 +112,14 @@ public class IceCreamManager : MonoBehaviour
     {
         piece.position = startPos;
         piece.gameObject.SetActive(true);
-        piece.DOMove(targetPos, _pieceMoveDuration).SetEase(Ease.Linear);
-        piece.DORotateQuaternion(targetRot, _pieceRotateDuration).SetEase(Ease.OutExpo);
+        piece.DOMove(targetPos, _pieceMoveDuration).SetEase(Ease.Flash);
+        Vector3 targetEuler = targetRot.eulerAngles;
+        if (targetEuler.y>180)
+        {
+            targetEuler.y += 180;
+        }
+        piece.DORotate(targetEuler, _pieceRotateDuration).SetEase(Ease.InExpo);
     }
 
-    void OnDispenserMoved()
-    {
-       // _isDispenserMoving = false;
-        _currentPieceIndex++;
-    }
     
 }
