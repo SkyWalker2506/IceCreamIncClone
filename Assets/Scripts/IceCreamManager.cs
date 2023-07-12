@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using IceCreamInc.UI;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
 
@@ -15,21 +14,18 @@ namespace IceCreamInc.IceCreamMechanic
         [SerializeField] private Transform _iceCreamDispenser;
         [SerializeField] private float _dispenserMoveSpeed = .5f;
         [SerializeField] private float _pieceMoveSpeed = 1f;
-        [SerializeField] private float _piecePourInterval = 1f;
+        [SerializeField] private float _pieceCreateInterval = .01f;
         [SerializeField] private Color[] _colors;
-        private IEnumerable<BezierKnot> _splineContainerKnots;
         private Color _currentColor;
         private int _currentPieceIndex;
         private bool _doCreate; 
         private float lastTimePiecePoured;
         private List<IceCreamPieceContainer> _iceCreamPieceContainers = new List<IceCreamPieceContainer>();
         private IceCreamPieceContainer _currentIceCreamPieceContainer;
-        private IceCreamPieceData _lastIceCreamPieceData;
        
         private void Awake()
         {
             _iceCreamUIManager.CreateButtons(_colors);
-            _splineContainerKnots = _splineContainer.Spline.Knots.ToArray();
         }
 
         private void OnEnable()
@@ -56,7 +52,7 @@ namespace IceCreamInc.IceCreamMechanic
         {
             if (_splineContainer.Spline.Knots.Count() > _currentPieceIndex)
             {
-                if (_doCreate && lastTimePiecePoured + _piecePourInterval < Time.time)
+                if (_doCreate && lastTimePiecePoured + _pieceCreateInterval < Time.time)
                 {
                     CreateIceCreamPiece();
                 }
@@ -81,9 +77,7 @@ namespace IceCreamInc.IceCreamMechanic
             _currentIceCreamPieceContainer = null;
             _currentPieceIndex = 0;
             _iceCreamDispenser.position = new Vector3(0, _iceCreamDispenser.position.y, 0);
-            _splineContainer.Spline.Knots = _splineContainerKnots;
             _currentIceCreamPieceContainer = null;
-            _lastIceCreamPieceData = null;
         }
 
         private void OnPourIceCreamButton(Color color)
@@ -112,11 +106,9 @@ namespace IceCreamInc.IceCreamMechanic
             
             BezierKnot knot = _splineContainer[0].Knots.ToArray()[_currentPieceIndex];
             Vector3 pieceTargetPos = knot.Position;
-            quaternion pieceTargetRot = knot.Rotation;
             Vector3 dispenserPosition = _iceCreamDispenser.position;
             Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, dispenserPosition.y, pieceTargetPos.z);
-            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetSpeedBased(true).SetEase(Ease.Linear);
-            _lastIceCreamPieceData = new IceCreamPieceData(dispenserPosition, pieceTargetPos);
+            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetSpeedBased(true).SetEase(Ease.Flash);
             _currentIceCreamPieceContainer.AddNode(new IceCreamPieceData(dispenserPosition, pieceTargetPos));
             _currentPieceIndex++;
             lastTimePiecePoured = Time.time;
