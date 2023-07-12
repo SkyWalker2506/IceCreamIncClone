@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Splines;
 
 namespace IceCreamInc.IceCreamMechanic
@@ -16,10 +17,15 @@ namespace IceCreamInc.IceCreamMechanic
             _splineContainer = new GameObject().AddComponent<SplineContainer>();
             SplineExtrude splineExtrude = _splineContainer.gameObject.AddComponent<SplineExtrude>();
             splineExtrude.Container = _splineContainer;
+            splineExtrude.Sides = 100;
+            splineExtrude.SegmentsPerUnit = 25;
+            splineExtrude.RebuildFrequency = 100;
             splineExtrude.RebuildOnSplineChange = true;
-            splineExtrude.RebuildFrequency = 500;
             _splineContainer.GetComponent<MeshFilter>().sharedMesh = mesh;
-            _splineContainer.GetComponent<MeshRenderer>().material.color = color;
+            MeshRenderer renderer= _splineContainer.GetComponent<MeshRenderer>();
+            renderer.material.color = color;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
             _pieceMoveSpeed = pieceMoveSpeed;
         }
 

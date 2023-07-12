@@ -10,7 +10,6 @@ namespace IceCreamInc.Tool
         [SerializeField] private SplineContainer _splineContainer;
         [SerializeField] private IceCreamCircleData[] _iceCreamCircleDatas;
 
-        //[ContextMenu("Create Spline")]
         public void CreateIceCreamSpline()
         {
             _splineContainer.Spline.Clear();
@@ -33,12 +32,7 @@ namespace IceCreamInc.Tool
                 float y = data.BaseHeight+data.HeightInterval*i/data.PieceCount;
                 float z = Mathf.Sin(angle);
                 Vector3 position = new Vector3(x * radius, y, -z *radius);
-                BezierKnot bezierKnot = new BezierKnot
-                {
-                    Position = position,
-                    Rotation = Quaternion.LookRotation(new Vector3(x,0,-z).normalized)
-                };
-                Debug.Log(bezierKnot.Rotation);
+                BezierKnot bezierKnot = new BezierKnot(position);
                 _splineContainer.Spline.Add(bezierKnot);       
             }
         }

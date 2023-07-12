@@ -4,7 +4,6 @@ using DG.Tweening;
 using IceCreamInc.UI;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.Splines;
 
 namespace IceCreamInc.IceCreamMechanic
@@ -18,6 +17,7 @@ namespace IceCreamInc.IceCreamMechanic
         [SerializeField] private float _pieceMoveSpeed = 1f;
         [SerializeField] private float _piecePourInterval = 1f;
         [SerializeField] private Color[] _colors;
+        private IEnumerable<BezierKnot> _splineContainerKnots;
         private Color _currentColor;
         private int _currentPieceIndex;
         private bool _doCreate; 
@@ -25,22 +25,24 @@ namespace IceCreamInc.IceCreamMechanic
         private List<IceCreamPieceContainer> _iceCreamPieceContainers = new List<IceCreamPieceContainer>();
         private IceCreamPieceContainer _currentIceCreamPieceContainer;
         private IceCreamPieceData _lastIceCreamPieceData;
+       
         private void Awake()
         {
             _iceCreamUIManager.CreateButtons(_colors);
+            _splineContainerKnots = _splineContainer.Spline.Knots.ToArray();
         }
 
         private void OnEnable()
         {
             _iceCreamUIManager.OnPourIceCreamPiece += OnPourIceCreamButton;
-            _iceCreamUIManager.OnStopPour += StopPour;
+            _iceCreamUIManager.OnStopPour += StopCreate;
             _iceCreamUIManager.OnResetButton += Reset;
         }
 
         private void OnDisable()
         {
             _iceCreamUIManager.OnPourIceCreamPiece -= OnPourIceCreamButton;
-            _iceCreamUIManager.OnStopPour -= StopPour;       
+            _iceCreamUIManager.OnStopPour -= StopCreate;       
             _iceCreamUIManager.OnResetButton -= Reset;
         }
 
@@ -79,6 +81,9 @@ namespace IceCreamInc.IceCreamMechanic
             _currentIceCreamPieceContainer = null;
             _currentPieceIndex = 0;
             _iceCreamDispenser.position = new Vector3(0, _iceCreamDispenser.position.y, 0);
+            _splineContainer.Spline.Knots = _splineContainerKnots;
+            _currentIceCreamPieceContainer = null;
+            _lastIceCreamPieceData = null;
         }
 
         private void OnPourIceCreamButton(Color color)
@@ -87,7 +92,7 @@ namespace IceCreamInc.IceCreamMechanic
             _currentColor = color;
         }
         
-        private void StopPour()
+        private void StopCreate()
         {
             _doCreate = false;
             _currentIceCreamPieceContainer = null;
@@ -98,12 +103,11 @@ namespace IceCreamInc.IceCreamMechanic
             if (_currentIceCreamPieceContainer == null)
             {
                 _currentIceCreamPieceContainer = new IceCreamPieceContainer(Instantiate(Resources.Load<Mesh>("SplineMesh")), _currentColor, _pieceMoveSpeed);
+                _iceCreamPieceContainers.Add(_currentIceCreamPieceContainer);
                 if (_lastIceCreamPieceData != null)
                 {
-                    _currentIceCreamPieceContainer.AddNode(_lastIceCreamPieceData);
-                    _splineContainer[0].Insert(_currentPieceIndex-1, _splineContainer[0].Knots.ToArray()[_currentPieceIndex]);
+                    _splineContainer[0].Insert(_currentPieceIndex-1, _splineContainerKnots.ToArray()[_currentPieceIndex-1]);
                 }   
-                _iceCreamPieceContainers.Add(_currentIceCreamPieceContainer);
             }
             
             BezierKnot knot = _splineContainer[0].Knots.ToArray()[_currentPieceIndex];
@@ -111,11 +115,9 @@ namespace IceCreamInc.IceCreamMechanic
             quaternion pieceTargetRot = knot.Rotation;
             Vector3 dispenserPosition = _iceCreamDispenser.position;
             Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, dispenserPosition.y, pieceTargetPos.z);
-            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetEase(Ease.Linear);
-            _lastIceCreamPieceData = new IceCreamPieceData(dispenserPosition,
-                pieceTargetPos, Quaternion.identity, pieceTargetRot);
-            _currentIceCreamPieceContainer.AddNode(new IceCreamPieceData(dispenserPosition,
-                pieceTargetPos, Quaternion.identity, pieceTargetRot));
+            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetSpeedBased(true).SetEase(Ease.Linear);
+            _lastIceCreamPieceData = new IceCreamPieceData(dispenserPosition, pieceTargetPos);
+            _currentIceCreamPieceContainer.AddNode(new IceCreamPieceData(dispenserPosition, pieceTargetPos));
             _currentPieceIndex++;
             lastTimePiecePoured = Time.time;
         }
