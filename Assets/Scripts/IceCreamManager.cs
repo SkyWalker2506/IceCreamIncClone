@@ -104,9 +104,9 @@ namespace IceCreamInc.IceCreamMechanic
             {
                 _currentIceCreamPieceContainer = new IceCreamPieceContainer(Instantiate(Resources.Load<Mesh>("SplineMesh")), _currentColor, _pieceMoveSpeed);
                 _iceCreamPieceContainers.Add(_currentIceCreamPieceContainer);
-                if (_lastIceCreamPieceData != null)
+                if (_currentPieceIndex != 0)
                 {
-                    _splineContainer[0].Insert(_currentPieceIndex-1, _splineContainerKnots.ToArray()[_currentPieceIndex-1]);
+                    _currentPieceIndex --;
                 }   
             }
             

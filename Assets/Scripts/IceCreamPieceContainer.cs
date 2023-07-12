@@ -17,9 +17,9 @@ namespace IceCreamInc.IceCreamMechanic
             _splineContainer = new GameObject().AddComponent<SplineContainer>();
             SplineExtrude splineExtrude = _splineContainer.gameObject.AddComponent<SplineExtrude>();
             splineExtrude.Container = _splineContainer;
-            splineExtrude.Sides = 100;
-            splineExtrude.SegmentsPerUnit = 25;
-            splineExtrude.RebuildFrequency = 100;
+            splineExtrude.Sides = 25;
+            splineExtrude.SegmentsPerUnit = 50;
+            splineExtrude.RebuildFrequency = 200;
             splineExtrude.RebuildOnSplineChange = true;
             _splineContainer.GetComponent<MeshFilter>().sharedMesh = mesh;
             MeshRenderer renderer= _splineContainer.GetComponent<MeshRenderer>();
