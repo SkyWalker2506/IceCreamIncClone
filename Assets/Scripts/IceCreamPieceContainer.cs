@@ -11,10 +11,14 @@ namespace IceCreamInc.IceCreamMechanic
         private List<IceCreamPieceData> _iceCreamPieces = new List<IceCreamPieceData>();
         private float _pieceMoveSpeed;
         
-        public IceCreamPieceContainer(Color color, float pieceMoveSpeed)
+        public IceCreamPieceContainer(Mesh mesh, Color color, float pieceMoveSpeed)
         {
             _splineContainer = new GameObject().AddComponent<SplineContainer>();
-            _splineContainer.gameObject.AddComponent<SplineExtrude>();
+            SplineExtrude splineExtrude = _splineContainer.gameObject.AddComponent<SplineExtrude>();
+            splineExtrude.Container = _splineContainer;
+            splineExtrude.RebuildOnSplineChange = true;
+            splineExtrude.RebuildFrequency = 500;
+            _splineContainer.GetComponent<MeshFilter>().sharedMesh = mesh;
             _splineContainer.GetComponent<MeshRenderer>().material.color = color;
             _pieceMoveSpeed = pieceMoveSpeed;
         }
@@ -22,6 +26,8 @@ namespace IceCreamInc.IceCreamMechanic
         public void AddNode(IceCreamPieceData pieceData)
         {
             _iceCreamPieces.Add(pieceData);
+            _splineContainer.Spline.Add(new BezierKnot());
+            pieceData.SetKnot(_splineContainer, _splineContainer.Spline.Knots.Count() - 1);
         }
 
         public void MovePieces()
@@ -40,6 +46,11 @@ namespace IceCreamInc.IceCreamMechanic
         private bool IsAllPiecesMoved()
         {
             return !_iceCreamPieces.Any(piece => piece.Time<1);
+        }
+
+        public void Destroy()
+        {
+           Object.Destroy(_splineContainer.gameObject);
         }
     }
 

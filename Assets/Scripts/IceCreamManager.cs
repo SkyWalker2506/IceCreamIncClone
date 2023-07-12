@@ -4,6 +4,7 @@ using DG.Tweening;
 using IceCreamInc.UI;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Splines;
 
 namespace IceCreamInc.IceCreamMechanic
@@ -12,23 +13,21 @@ namespace IceCreamInc.IceCreamMechanic
     {
         [SerializeField] private IceCreamUIManager _iceCreamUIManager;
         [SerializeField] private SplineContainer _splineContainer;
-        [SerializeField] private GameObject _iceCreamPiecePrefab;
         [SerializeField] private Transform _iceCreamDispenser;
-        [SerializeField] private float _dispenserMoveDuration = .5f;
-        [SerializeField] private float _pieceMoveDuration = 1f;
-        [SerializeField] private float _pieceRotateDuration = 1f;
+        [SerializeField] private float _dispenserMoveSpeed = .5f;
+        [SerializeField] private float _pieceMoveSpeed = 1f;
         [SerializeField] private float _piecePourInterval = 1f;
         [SerializeField] private Color[] _colors;
         private Color _currentColor;
         private int _currentPieceIndex;
         private bool _doCreate; 
-        private Dictionary<Transform, Material> _iceCreamPieces = new Dictionary<Transform, Material>();
         private float lastTimePiecePoured;
-        
+        private List<IceCreamPieceContainer> _iceCreamPieceContainers = new List<IceCreamPieceContainer>();
+        private IceCreamPieceContainer _currentIceCreamPieceContainer;
+        private IceCreamPieceData _lastIceCreamPieceData;
         private void Awake()
         {
             _iceCreamUIManager.CreateButtons(_colors);
-            CreateIceCreamPieces();
         }
 
         private void OnEnable()
@@ -47,43 +46,41 @@ namespace IceCreamInc.IceCreamMechanic
 
         private void Update()
         {
-            TryPourIceCreamPiece();
+            TryCreateIceCreamPiece();
+            MoveIceCreamPieces();
         }
 
-        private void TryPourIceCreamPiece()
+        private void TryCreateIceCreamPiece()
         {
             if (_splineContainer.Spline.Knots.Count() > _currentPieceIndex)
             {
                 if (_doCreate && lastTimePiecePoured + _piecePourInterval < Time.time)
                 {
-                    PourIceCreamPiece();
+                    CreateIceCreamPiece();
                 }
+            }
+        }
+
+        private void MoveIceCreamPieces()
+        {
+            foreach (IceCreamPieceContainer container in _iceCreamPieceContainers)
+            {
+                container.MovePieces();
             }
         }
 
         private void Reset()
         {
-            foreach (Transform piece in _iceCreamPieces.Keys)
+            foreach (IceCreamPieceContainer container in _iceCreamPieceContainers)
             {
-                piece.position = Vector3.zero;
-                piece.rotation = _iceCreamPiecePrefab.transform.rotation;
-                piece.gameObject.SetActive(false);
-                _currentPieceIndex = 0;
-                _iceCreamDispenser.position = new Vector3(0, _iceCreamDispenser.position.y, 0);
+                container.Destroy();
             }
+            _iceCreamPieceContainers.Clear();
+            _currentIceCreamPieceContainer = null;
+            _currentPieceIndex = 0;
+            _iceCreamDispenser.position = new Vector3(0, _iceCreamDispenser.position.y, 0);
         }
 
-        private void CreateIceCreamPieces()
-        {
-            GameObject piece; 
-            for (int i = 0; i < _splineContainer.Spline.Knots.Count(); i++)
-            {
-                piece = Instantiate(_iceCreamPiecePrefab);
-                _iceCreamPieces.Add(piece.transform, piece.GetComponentInChildren<MeshRenderer>().material);
-                piece.SetActive(false);
-            }
-        }
-        
         private void OnPourIceCreamButton(Color color)
         {
             _doCreate = true;
@@ -93,33 +90,35 @@ namespace IceCreamInc.IceCreamMechanic
         private void StopPour()
         {
             _doCreate = false;
+            _currentIceCreamPieceContainer = null;
         }
 
-        void PourIceCreamPiece()
+        void CreateIceCreamPiece()
         {
-            Transform piece = _iceCreamPieces.Keys.ToArray()[_currentPieceIndex];
-            _iceCreamPieces[piece].color = _currentColor;
+            if (_currentIceCreamPieceContainer == null)
+            {
+                _currentIceCreamPieceContainer = new IceCreamPieceContainer(Instantiate(Resources.Load<Mesh>("SplineMesh")), _currentColor, _pieceMoveSpeed);
+                if (_lastIceCreamPieceData != null)
+                {
+                    _currentIceCreamPieceContainer.AddNode(_lastIceCreamPieceData);
+                    _splineContainer[0].Insert(_currentPieceIndex-1, _splineContainer[0].Knots.ToArray()[_currentPieceIndex]);
+                }   
+                _iceCreamPieceContainers.Add(_currentIceCreamPieceContainer);
+            }
+            
             BezierKnot knot = _splineContainer[0].Knots.ToArray()[_currentPieceIndex];
             Vector3 pieceTargetPos = knot.Position;
             quaternion pieceTargetRot = knot.Rotation;
-            Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, _iceCreamDispenser.position.y, pieceTargetPos.z);
-            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveDuration).SetEase(Ease.Linear);
-            MovePiece(piece, _iceCreamDispenser.position, pieceTargetPos, pieceTargetRot);
+            Vector3 dispenserPosition = _iceCreamDispenser.position;
+            Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, dispenserPosition.y, pieceTargetPos.z);
+            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetEase(Ease.Linear);
+            _lastIceCreamPieceData = new IceCreamPieceData(dispenserPosition,
+                pieceTargetPos, Quaternion.identity, pieceTargetRot);
+            _currentIceCreamPieceContainer.AddNode(new IceCreamPieceData(dispenserPosition,
+                pieceTargetPos, Quaternion.identity, pieceTargetRot));
             _currentPieceIndex++;
             lastTimePiecePoured = Time.time;
         }
 
-        void MovePiece(Transform piece, Vector3 startPos, Vector3 targetPos, Quaternion targetRot)
-        {
-            piece.position = startPos;
-            piece.gameObject.SetActive(true);
-            piece.DOMove(targetPos, _pieceMoveDuration).SetEase(Ease.Flash);
-            Vector3 targetEuler = targetRot.eulerAngles;
-            if (targetEuler.y>180)
-            {
-                targetEuler.y += 180;
-            }
-            piece.DORotate(targetEuler, _pieceRotateDuration).SetEase(Ease.InExpo);
-        }
     }
 }

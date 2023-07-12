@@ -5,33 +5,44 @@ namespace IceCreamInc.IceCreamMechanic
 {
     public class IceCreamPieceData
     {
-        public BezierKnot BezierKnot;
-        public Vector3 StartPosition;
-        public Vector3 EndPosition;
-        public Quaternion StartRotation;
-        public Quaternion EndRotation;
+        private SplineContainer _splineContainer;
+        private int _knotIndex = 0;
+        private BezierKnot _bezierKnot;
+        private Vector3 _startPosition;
+        private Vector3 _endPosition;
+        private Quaternion _startRotation;
+        private Quaternion _endRotation;
+        
+
         public float Time { get; private set; }
 
         public IceCreamPieceData(Vector3 startPos, Vector3 endPos, Quaternion startRot, Quaternion endRotation)
         {
-            StartPosition = startPos;
-            EndPosition = endPos;
-            StartRotation = startRot;
-            EndRotation = endRotation;
+            _startPosition = startPos;
+            _endPosition = endPos;
+            _startRotation = startRot;
+            _endRotation = endRotation;
             Time = 0;
-            BezierKnot = new BezierKnot
+            _bezierKnot = new BezierKnot
             {
-                Position = StartPosition,
-                Rotation = StartRotation
+                Position = _startPosition,
+                Rotation = _startRotation
             };
         }
 
         public void UpdatePieceData(float time)
         {
             Time = Mathf.Clamp01(time);
-            BezierKnot.Position = Vector3.Lerp(StartPosition, EndPosition, Time);
-            BezierKnot.Rotation = Quaternion.Lerp(StartRotation, EndRotation, Time);
+            _bezierKnot.Position = Vector3.Lerp(_startPosition, _endPosition, Time);
+            _bezierKnot.Rotation = Quaternion.Lerp(_startRotation,_endRotation, Time);
+            _splineContainer.Spline.SetKnot(_knotIndex,_bezierKnot);
         }
-            
+
+        public void SetKnot(SplineContainer splineContainer, int index)
+        {
+            _splineContainer = splineContainer;
+            _knotIndex = index;
+        }
+
     }
 }
