@@ -108,7 +108,7 @@ namespace IceCreamInc.IceCreamMechanic
             Vector3 pieceTargetPos = knot.Position;
             Vector3 dispenserPosition = _iceCreamDispenser.position;
             Vector3 dispenserTargetPos = new Vector3(pieceTargetPos.x, dispenserPosition.y, pieceTargetPos.z);
-            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetSpeedBased(true).SetEase(Ease.InSine);
+            _iceCreamDispenser.DOMove(dispenserTargetPos, _dispenserMoveSpeed).SetSpeedBased(true);
             _currentIceCreamPieceContainer.AddNode(new IceCreamPieceData(dispenserPosition, pieceTargetPos));
             _currentPieceIndex++;
             lastTimePiecePoured = Time.time;
